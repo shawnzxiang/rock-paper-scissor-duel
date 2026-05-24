@@ -1,0 +1,19 @@
+# Xcode
+.DS_Store
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.xcarchive
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+
+# Generated
+*.dSYM.zip
+*.dSYM
+
+# Local
+.env
