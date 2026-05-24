@@ -26,6 +26,13 @@ final class GameViewModel: ObservableObject {
     private var holdGateTask: Task<Void, Never>?
     private var sequenceTask: Task<Void, Never>?
     private var revealHoldTask: Task<Void, Never>?
+    private var reviewPromptTask: Task<Void, Never>?
+    private var hasPromptedForReview = false
+
+    /// Test seam — production uses the SKStoreReviewController path.
+    var reviewRequester: () -> Void = { ReviewPrompter.requestReview() }
+    /// Test seam — production waits 2.5s after a bot win.
+    var reviewPromptDelay: TimeInterval = 2.5
 
     init(store: SettingsStore) {
         self.store = store
@@ -160,11 +167,35 @@ final class GameViewModel: ObservableObject {
             if Task.isCancelled { return }
             await MainActor.run { self.phase = .result }
         }
+
+        // Schedule App-Store review prompt if the user-facing (bottom) half
+        // won — the top half is rotated 180° for the opposing player and
+        // can't see/act on the system alert. Once per session.
+        scheduleReviewPromptIfApplicable(winner: outcome)
+    }
+
+    func scheduleReviewPromptIfApplicable(winner: Winner) {
+        guard winner == .bot, !hasPromptedForReview else { return }
+        reviewPromptTask?.cancel()
+        let delayNs = UInt64(max(0, reviewPromptDelay) * 1_000_000_000)
+        reviewPromptTask = Task { [weak self] in
+            do { try await Task.sleep(nanoseconds: delayNs) } catch { return }
+            guard let self else { return }
+            if Task.isCancelled { return }
+            // Only fire if the user is still on the result screen and hasn't
+            // moved on (replay tapped, settings opened, demo started, etc.).
+            guard self.phase == .result || self.phase == .reveal else { return }
+            guard !self.settingsOpen else { return }
+            guard self.winner == .bot else { return }
+            self.hasPromptedForReview = true
+            self.reviewRequester()
+        }
     }
 
     func resetRound() {
         sequenceTask?.cancel()
         revealHoldTask?.cancel()
+        reviewPromptTask?.cancel()
         phase = .idle
         topChoice = nil
         botChoice = nil
@@ -175,6 +206,7 @@ final class GameViewModel: ObservableObject {
     func resetScores() {
         sequenceTask?.cancel()
         revealHoldTask?.cancel()
+        reviewPromptTask?.cancel()
         topScore = 0
         botScore = 0
         demoMode = false

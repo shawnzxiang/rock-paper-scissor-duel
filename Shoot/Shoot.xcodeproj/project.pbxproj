@@ -22,7 +22,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A1A1A1A1A1A1A1A1A1A100D0 /* Exceptions */ = {
+		A1A1A1A1A1A1A1A1A1A100D0 /* Exceptions for "Shoot" folder in "Shoot" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -35,7 +35,7 @@
 		A1A1A1A1A1A1A1A1A1A10010 /* Shoot */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A1A1A1A1A1A1A1A1A1A100D0 /* Exceptions */,
+				A1A1A1A1A1A1A1A1A1A100D0 /* Exceptions for "Shoot" folder in "Shoot" target */,
 			);
 			path = Shoot;
 			sourceTree = "<group>";
@@ -480,20 +480,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1A1A1A1A1A1A1A1A1A100A0 /* Build configuration list for PBXProject "Shoot" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A1A1A1A1A1A1A1A1A1A100B0 /* Debug */,
-				A1A1A1A1A1A1A1A1A1A100B1 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A1A1A1A1A1A1A1A1A1A10060 /* Build configuration list for PBXNativeTarget "Shoot" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1A1A1A1A1A1A1A1A1A100C0 /* Debug */,
 				A1A1A1A1A1A1A1A1A1A100C1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1A1A1A1A1A1A1A1A1A100A0 /* Build configuration list for PBXProject "Shoot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1A1A1A1A1A1A1A1A1A100B0 /* Debug */,
+				A1A1A1A1A1A1A1A1A1A100B1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

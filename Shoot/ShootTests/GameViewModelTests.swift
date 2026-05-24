@@ -237,6 +237,102 @@ final class GameViewModelTests: XCTestCase {
         XCTAssertFalse(vm.settingsOpen)
     }
 
+    // MARK: - Review prompt (bottom-half winner only)
+    //
+    // The schedule function is exercised directly with a controlled state +
+    // a short prompt delay, so these tests are deterministic and don't depend
+    // on Choice.random producing a particular outcome.
+
+    func testReviewPromptFiresAfterBotWinAndDelay() async {
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.10
+        vm.phase = .result
+        vm.winner = .bot
+        vm.scheduleReviewPromptIfApplicable(winner: .bot)
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        XCTAssertEqual(count, 1, "bot win should fire one review prompt after the delay")
+    }
+
+    func testReviewPromptDoesNotFireForTopWin() async {
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.10
+        vm.phase = .result
+        vm.winner = .top
+        vm.scheduleReviewPromptIfApplicable(winner: .top)
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        XCTAssertEqual(count, 0, "top win must not trigger review prompt")
+    }
+
+    func testReviewPromptDoesNotFireForTie() async {
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.10
+        vm.phase = .result
+        vm.winner = .tie
+        vm.scheduleReviewPromptIfApplicable(winner: .tie)
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        XCTAssertEqual(count, 0, "tie must not trigger review prompt")
+    }
+
+    func testReviewPromptOnlyFiresOncePerSession() async {
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.05
+        vm.phase = .result
+        vm.winner = .bot
+        // First call fires.
+        vm.scheduleReviewPromptIfApplicable(winner: .bot)
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(count, 1)
+        // Subsequent bot wins should not re-prompt.
+        vm.scheduleReviewPromptIfApplicable(winner: .bot)
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(count, 1, "second bot win in same session must not re-prompt")
+    }
+
+    func testReviewPromptCancelledByResetRound() async {
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.20
+        vm.phase = .result
+        vm.winner = .bot
+        vm.scheduleReviewPromptIfApplicable(winner: .bot)
+        // Reset before the prompt fires.
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        vm.resetRound()
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(count, 0, "resetRound must cancel a pending prompt")
+    }
+
+    func testReviewPromptSkippedIfPhaseLeftResult() async {
+        // Schedule a prompt, then manually transition the phase out of reveal/result
+        // before the delay elapses.
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.15
+        vm.phase = .result
+        vm.winner = .bot
+        vm.scheduleReviewPromptIfApplicable(winner: .bot)
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        vm.phase = .idle   // simulated navigation away
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        XCTAssertEqual(count, 0, "leaving result screen must skip the prompt")
+    }
+
+    func testReviewPromptSkippedIfSettingsOpen() async {
+        var count = 0
+        vm.reviewRequester = { count += 1 }
+        vm.reviewPromptDelay = 0.15
+        vm.phase = .result
+        vm.winner = .bot
+        vm.settingsOpen = true
+        vm.scheduleReviewPromptIfApplicable(winner: .bot)
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        XCTAssertEqual(count, 0, "open settings sheet must skip the prompt")
+    }
+
     // MARK: - Background tap is a no-op (regression guard)
 
     func testTapBackgroundDoesNotMutateState() async {
